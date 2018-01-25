@@ -19,6 +19,8 @@ var (
 		redisAddr string
 		staticDir string
 	}{}
+
+	cli = kingpin.New("pbpaste", "pbpaste server")
 )
 
 const (
@@ -27,14 +29,13 @@ const (
 )
 
 func init() {
-	app := kingpin.New("pbpaste", "pbpaste server")
-	app.Version("0.0.1")
-	app.Flag("redis-addr", "redis address").
+	cli.Version("0.0.1")
+	cli.Flag("redis-addr", "redis address").
 		Envar("REDIS_ADDR").
 		Default(Memory).
 		StringVar(&config.redisAddr)
 
-	if _, err := app.Parse(os.Args[1:]); err != nil {
+	if _, err := cli.Parse(os.Args[1:]); err != nil {
 		panic(err)
 	}
 }
@@ -53,6 +54,7 @@ func main() {
 	if err != nil {
 		log.WithField("addr", config.redisAddr).WithError(err).Fatal("failed to parse redis URL")
 	}
+	defer redisClient.Close()
 	log.WithField("addr", config.redisAddr).Info("connected to redis")
 
 	mux := chi.NewMux()
@@ -73,9 +75,8 @@ func main() {
 	if err == nil || err == http.ErrServerClosed {
 		ll.Info("shutting down")
 	} else {
-		ll.Error("shutting down")
+		ll.WithError(err).Error("shutting down")
 	}
-
 }
 
 func connectRedis(addr string) (*redis.Client, error) {

@@ -28,7 +28,7 @@ func NewStore(client *redis.Client) *Store {
 }
 
 func (s *Store) SetTTL(dur time.Duration) {
-	if dur <= time.Duration(0) {
+	if dur.Nanoseconds() <= 0 {
 		panic("ttl must be greater than zero")
 	}
 	s.ttl = dur
@@ -39,10 +39,27 @@ func (s *Store) Put(name, text string) error {
 	return errors.Wrap(st.Err(), "failed to put item")
 }
 
-func (s *Store) Get(name string) ([]byte, error) {
-	st := s.client.Get(name)
-	if err := st.Err(); err != nil {
-		return nil, err
+func (s *Store) Get(name string) (text string, expires time.Time, err error) {
+	tx := s.client.TxPipeline()
+	defer tx.Close()
+
+	body := tx.Get(name)
+	ttl := tx.TTL(name)
+
+	_, err = tx.Exec()
+	if err == redis.Nil {
+		err = nil
+		return
 	}
-	return []byte(st.Val()), nil
+	if err != nil {
+		err = errors.Wrap(err, "bad response from redis")
+		return
+	}
+
+	text = body.Val()
+
+	if ttl.Val().Nanoseconds() > 0 {
+		expires = time.Now().UTC().Add(ttl.Val())
+	}
+	return
 }

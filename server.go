@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
+	"net/url"
+	"time"
 
 	"github.com/apex/log"
 	"github.com/blockloop/pbpaste/rand"
@@ -15,7 +16,7 @@ import (
 )
 
 var (
-	ErrNotFound = fmt.Errorf("entity not found")
+	ErrNotFound = fmt.Errorf("paste not found")
 )
 
 type Handler struct {
@@ -45,38 +46,22 @@ func (h *Handler) getForm(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, HTMLForm)
 }
 
-// FileServer conveniently sets up a http.FileServer handler to serve
-// static files from a http.FileSystem.
-func (h *Handler) FileServer(r chi.Router, path string, root http.FileSystem) {
-	if strings.ContainsAny(path, "{}*") {
-		panic("FileServer does not permit URL parameters.")
-	}
-
-	fs := http.StripPrefix(path, http.FileServer(root))
-
-	if path != "/" && path[len(path)-1] != '/' {
-		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
-		path += "/"
-	}
-	path += "*"
-
-	r.Get(path, http.HandlerFunc(fs.ServeHTTP))
-}
-
 func (h *Handler) getPaste(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
-	b, err := h.store.Get(name)
+	text, ttl, err := h.store.Get(name)
 	if err != nil {
 		sendError(w, 500, err)
 		return
 	}
 
-	if len(b) == 0 {
+	if len(text) == 0 {
 		sendError(w, 404, ErrNotFound)
 		return
 	}
 
-	render.PlainText(w, r, string(b))
+	w.Header().Set("Expires", ttl.Format(time.RFC1123))
+
+	render.PlainText(w, r, text)
 }
 
 func (h *Handler) postForm(w http.ResponseWriter, r *http.Request) {
@@ -100,11 +85,11 @@ func (h *Handler) postForm(w http.ResponseWriter, r *http.Request) {
 		sendError(w, 500, err)
 		return
 	}
-	furl := "/x/" + fname
+	uri := newURL(r, fname)
 
 	data := map[string]interface{}{
 		"Name": fname,
-		"URL":  furl,
+		"URL":  uri,
 	}
 
 	switch render.GetAcceptedContentType(r) {
@@ -115,16 +100,8 @@ func (h *Handler) postForm(w http.ResponseWriter, r *http.Request) {
 	case render.ContentTypeJSON:
 		render.JSON(w, r, &data)
 	default:
-		u := &(*r.URL)
-		u.Host = r.Host
-		u.Scheme = "http"
-		if r.TLS != nil {
-			u.Scheme = "https"
-		}
-		u.Path = "/x/" + fname
-		render.PlainText(w, r, u.String())
+		render.PlainText(w, r, uri)
 	}
-
 }
 
 func sendError(w http.ResponseWriter, status int, err error) {
@@ -134,4 +111,13 @@ func sendError(w http.ResponseWriter, status int, err error) {
 	}
 	w.WriteHeader(status)
 	fmt.Fprint(w, msg)
+}
+
+func newURL(r *http.Request, name string) string {
+	u, _ := url.ParseRequestURI(r.RequestURI)
+	u.Scheme, u.Host, u.Path = "http", r.Host, "/x/"+name
+	if r.TLS != nil {
+		u.Scheme = "https"
+	}
+	return u.String()
 }
