@@ -30,8 +30,8 @@ const (
 
 func init() {
 	cli.Version("0.0.1")
-	cli.Flag("redis-addr", "redis address").
-		Envar("REDIS_ADDR").
+	cli.Flag("redis-url", "redis url").
+		Envar("REDIS_URL").
 		Default(Memory).
 		StringVar(&config.redisAddr)
 
