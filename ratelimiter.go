@@ -14,12 +14,12 @@ import (
 func ipRateLimiter(client *redis.Client) func(http.Handler) http.Handler {
 	// Define a limit rate to 4 requests per hour.
 	rate := limiter.Rate{
-		Limit:  200,
+		Limit:  100,
 		Period: time.Hour * 24,
 	}
 
 	store, err := sredis.NewStoreWithOptions(client, limiter.StoreOptions{
-		Prefix:   "limiter_http_example",
+		Prefix:   "ratelimiter",
 		MaxRetry: 3,
 	})
 	if err != nil {
