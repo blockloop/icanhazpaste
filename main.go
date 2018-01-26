@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -11,51 +12,35 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-redis/redis"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	config = struct {
-		redisAddr string
-		staticDir string
-	}{}
-
-	cli = kingpin.New("pbpaste", "pbpaste server")
-)
-
-const (
-	// Memory is fleeting
-	Memory = "MEMORY"
+	debug     bool
+	redisAddr = os.Getenv("REDIS_URL")
 )
 
 func init() {
-	cli.Version("0.0.1")
-	cli.Flag("redis-url", "redis url").
-		Envar("REDIS_URL").
-		Default(Memory).
-		StringVar(&config.redisAddr)
-
-	if _, err := cli.Parse(os.Args[1:]); err != nil {
-		panic(err)
-	}
+	debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
 }
 
 func main() {
-	if config.redisAddr == Memory {
+	ll := log.WithField("debug", debug)
+	if redisAddr == "" {
 		srv, err := miniredis.Run()
 		if err != nil {
 			log.WithError(err).Fatal("failed to start miniredis")
 		}
-		config.redisAddr = srv.Addr()
+		redisAddr = srv.Addr()
 		defer srv.Close()
 	}
+	ll = ll.WithField("redis", redisAddr)
 
-	redisClient, err := connectRedis(config.redisAddr)
+	redisClient, err := connectRedis(redisAddr)
 	if err != nil {
-		log.WithField("addr", config.redisAddr).WithError(err).Fatal("failed to parse redis URL")
+		ll.WithError(err).Fatal("failed to parse redis URL")
 	}
 	defer redisClient.Close()
-	log.WithField("addr", config.redisAddr).Info("connected to redis")
+	ll.Info("connected to redis")
 
 	mux := chi.NewMux()
 	mux.Use(
@@ -71,12 +56,10 @@ func main() {
 	handler.RegisterRoutes(mux)
 
 	err = http.ListenAndServe(":3000", mux)
-	ll := log.WithError(err)
-	if err == nil || err == http.ErrServerClosed {
-		ll.Info("shutting down")
-	} else {
-		ll.WithError(err).Error("shutting down")
+	if err != nil {
+		ll = ll.WithError(err)
 	}
+	ll.Error("shutting down")
 }
 
 func connectRedis(addr string) (*redis.Client, error) {

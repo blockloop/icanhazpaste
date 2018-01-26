@@ -19,6 +19,8 @@ import (
 var (
 	// ErrNotFound is an error indicating a paste was not found
 	ErrNotFound = fmt.Errorf("paste not found")
+	// ErrInternal is an internal error
+	ErrInternal = fmt.Errorf("internal error")
 )
 
 // Handler is an HTTP handler
@@ -129,10 +131,13 @@ func (h *Handler) postForm(w http.ResponseWriter, r *http.Request) {
 
 func sendError(w http.ResponseWriter, status int, err error) {
 	msg := err.Error()
+	w.WriteHeader(status)
 	if status > 499 {
 		log.WithError(err).Error(msg)
+		if !debug {
+			msg = ErrInternal.Error()
+		}
 	}
-	w.WriteHeader(status)
 	fmt.Fprint(w, msg)
 }
 
