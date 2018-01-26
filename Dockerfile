@@ -4,7 +4,8 @@ ADD . /go/src/github.com/blockloop/pbpaste
 RUN go build -o /go/bin/pbpaste github.com/blockloop/pbpaste
 
 FROM alpine
-COPY --from=builder /go/bin/pbpaste /pbpaste
 RUN apk add --update --no-cache ca-certificates
 ENTRYPOINT ["/pbpaste"]
+COPY --from=builder /go/bin/pbpaste /pbpaste
+ADD form.html /form.html
 EXPOSE 3000

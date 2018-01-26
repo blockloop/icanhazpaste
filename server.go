@@ -43,7 +43,7 @@ func (h *Handler) RegisterRoutes(mux chi.Router) {
 }
 
 func (h *Handler) getForm(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, HTMLForm)
+	http.ServeFile(w, r, "form.html")
 }
 
 func (h *Handler) getPaste(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +78,11 @@ func (h *Handler) postForm(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		clip = string(byt)
+	}
+
+	if clip == "" {
+		h.getForm(w, r)
+		return
 	}
 
 	fname := rand.String(20)
