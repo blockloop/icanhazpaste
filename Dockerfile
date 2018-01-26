@@ -7,6 +7,7 @@ FROM alpine
 RUN apk add --update --no-cache ca-certificates
 ENTRYPOINT ["/pbpaste"]
 ADD CHECKS /app/CHECKS
-COPY --from=builder /go/bin/pbpaste /pbpaste
 ADD form.html /form.html
+ADD styles.css /styles.css
+COPY --from=builder /go/bin/pbpaste /pbpaste
 EXPOSE 3000

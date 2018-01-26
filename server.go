@@ -17,14 +17,17 @@ import (
 )
 
 var (
+	// ErrNotFound is an error indicating a paste was not found
 	ErrNotFound = fmt.Errorf("paste not found")
 )
 
+// Handler is an HTTP handler
 type Handler struct {
 	redis *redis.Client
 	store *Store
 }
 
+// NewHandler constructs a new handler with the given client
 func NewHandler(redisClient *redis.Client) *Handler {
 	return &Handler{
 		redis: redisClient,
@@ -32,15 +35,20 @@ func NewHandler(redisClient *redis.Client) *Handler {
 	}
 }
 
+// RegisterRoutes registers the HTTP routes with the given router
 func (h *Handler) RegisterRoutes(mux chi.Router) {
 	mux.With(
 		middleware.AllowContentType("application/x-www-form-urlencoded", "text/plain"),
 		ipRateLimiter(h.redis),
 	).Post("/", h.postForm)
 
+	mux.Get("/styles.css", h.getStyles)
 	mux.Get("/", h.getForm)
-
 	mux.Get("/x/{name}", h.getPaste)
+}
+
+func (h *Handler) getStyles(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "styles.css")
 }
 
 func (h *Handler) getForm(w http.ResponseWriter, r *http.Request) {
