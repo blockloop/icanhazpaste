@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-redis/redis"
+	"github.com/pkg/errors"
 	"github.com/pressly/chi/render"
 )
 
@@ -64,29 +65,38 @@ func (h *Handler) getPaste(w http.ResponseWriter, r *http.Request) {
 	render.PlainText(w, r, text)
 }
 
+// postForm handles all posts of pastes
+//
+// when using curl the default content-type is form-urlencoded even if the intention
+// was to submit plain text. If the field 'clip' does not exist (specified in the
+// html form served from us) we will assume that the user was submitting a plaintext form
 func (h *Handler) postForm(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		sendError(w, 400, err)
+	rawBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		sendError(w, 500, errors.Wrap(err, "failed to read body"))
 		return
 	}
+	body := string(rawBody)
 
-	clip := r.FormValue("clip")
-	if clip == "" {
-		byt, err := ioutil.ReadAll(r.Body)
+	if render.GetRequestContentType(r) == render.ContentTypeForm {
+		form, err := url.ParseQuery(body)
 		if err != nil {
-			sendError(w, 500, err)
+			sendError(w, 400, errors.Wrap(err, "invalid request"))
 			return
 		}
-		clip = string(byt)
+		if clip := form["clip"]; len(clip) > 0 {
+			body = clip[0]
+		}
 	}
 
-	if clip == "" {
+	// nothing was submitted so just render the form again
+	if len(body) == 0 {
 		h.getForm(w, r)
 		return
 	}
 
 	fname := rand.String(20)
-	if err := h.store.Put(fname, clip); err != nil {
+	if err := h.store.Put(fname, body); err != nil {
 		sendError(w, 500, err)
 		return
 	}
