@@ -90,12 +90,10 @@ func (h *Handler) postForm(w http.ResponseWriter, r *http.Request) {
 
 	if render.GetRequestContentType(r) == render.ContentTypeForm {
 		form, err := url.ParseQuery(body)
-		if err != nil {
-			sendError(w, 400, errors.Wrap(err, "invalid request"))
-			return
-		}
-		if clip := form["clip"]; len(clip) > 0 {
-			body = clip[0]
+		if err == nil {
+			if clip := form["clip"]; len(clip) > 0 {
+				body = clip[0]
+			}
 		}
 	}
 
