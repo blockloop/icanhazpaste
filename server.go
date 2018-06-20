@@ -90,7 +90,7 @@ func (h *Handler) getPaste(w http.ResponseWriter, r *http.Request) {
 // html form served from us) we will assume that the user was submitting a plaintext form
 func (h *Handler) postForm(w http.ResponseWriter, r *http.Request) {
 	if r.ContentLength > 1*Megabyte {
-		sendError(w, http.StatusRequestEntityTooLarge, errors.Errorf("Request is too large. Must be < 1MB."))
+		http.Error(w, "Request is too large. Must be < 1MB.", http.StatusRequestEntityTooLarge)
 		return
 	}
 
