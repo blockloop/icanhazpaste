@@ -16,6 +16,14 @@ import (
 	"github.com/pressly/chi/render"
 )
 
+const (
+	Byte = 1.0 << (10 * iota)
+	Kilobyte
+	Megabyte
+	Gigabyte
+	Terabyte
+)
+
 var (
 	// ErrNotFound is an error indicating a paste was not found
 	ErrNotFound = fmt.Errorf("paste not found")
@@ -81,6 +89,11 @@ func (h *Handler) getPaste(w http.ResponseWriter, r *http.Request) {
 // was to submit plain text. If the field 'clip' does not exist (specified in the
 // html form served from us) we will assume that the user was submitting a plaintext form
 func (h *Handler) postForm(w http.ResponseWriter, r *http.Request) {
+	if r.ContentLength > 1*Megabyte {
+		sendError(w, http.StatusRequestEntityTooLarge, errors.Errorf("Request is too large. Must be < 1MB."))
+		return
+	}
+
 	rawBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		sendError(w, 500, errors.Wrap(err, "failed to read body"))
