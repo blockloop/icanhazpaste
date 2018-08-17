@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/apex/log"
-	"github.com/blockloop/pbpaste/rand"
+	"github.com/blockloop/icanhazpaste/rand"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-redis/redis"

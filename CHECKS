@@ -2,4 +2,4 @@ WAIT=3
 TIMEOUT=10
 ATTEMPTS=10
 
-/  pbpaste
+/  icanhazpaste
