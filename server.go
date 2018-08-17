@@ -25,13 +25,13 @@ const (
 
 	helpText = `
  # send a file
- curl --data-binary @./notes.txt https://icanhazpaste.com
+ curl --data-binary @./notes.txt icanhazpaste.com
 
  # send some raw text
- curl --data-binary 'Hello, there!' https://icanhazpaste.com
+ curl --data-binary 'Hello, there!' icanhazpaste.com
 
  # send from stdin
- journalctl -xe -u dnsmasq | curl --data-binary @- https://icanhazpaste.com
+ journalctl -xe -u dnsmasq | curl --data-binary @- icanhazpaste.com
 `
 )
 
