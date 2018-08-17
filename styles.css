@@ -121,3 +121,12 @@ textarea#paste:invalid
         border: 0px solid green;
         overflow: auto; 
 }
+
+#page-help {
+        padding-top: 20px;
+        margin-left: 10px;
+}
+
+        #page-help pre {
+                padding-bottom: 20px;
+        }

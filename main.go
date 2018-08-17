@@ -1,9 +1,8 @@
 package main
 
 import (
+	"flag"
 	"net/http"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -12,19 +11,25 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-redis/redis"
+	"github.com/kouhin/envflag"
 )
 
 var (
-	debug     bool
-	redisAddr = os.Getenv("REDIS_URL")
+	debug      bool
+	redisAddr  string
+	listenAddr string
 )
 
 func init() {
-	debug, _ = strconv.ParseBool(os.Getenv("DEBUG"))
+	flag.BoolVar(&debug, "debug", false, "Enable debug mode")
+	flag.StringVar(&redisAddr, "redis-url", "", "Redis address to connect to (empty address creates miniredis)")
+	flag.StringVar(&listenAddr, "listen-addr", ":3000", "Address to listen for HTTP requests")
 }
 
 func main() {
-	ll := log.WithField("debug", debug)
+	if err := envflag.Parse(); err != nil {
+		log.WithError(err).Fatal("failed to parse flags")
+	}
 	if redisAddr == "" {
 		srv, err := miniredis.Run()
 		if err != nil {
@@ -33,7 +38,7 @@ func main() {
 		redisAddr = srv.Addr()
 		defer srv.Close()
 	}
-	ll = ll.WithField("redis", redisAddr)
+	ll := log.WithField("redis", redisAddr)
 
 	redisClient, err := connectRedis(redisAddr)
 	if err != nil {
@@ -55,11 +60,9 @@ func main() {
 	handler := NewHandler(redisClient)
 	handler.RegisterRoutes(mux)
 
-	err = http.ListenAndServe(":3000", mux)
-	if err != nil {
-		ll = ll.WithError(err)
-	}
-	ll.Error("shutting down")
+	log.WithField("address", listenAddr).Info("HTTP server starting")
+	log.WithError(http.ListenAndServe(":3000", mux)).
+		Error("shutting down")
 }
 
 func connectRedis(addr string) (*redis.Client, error) {

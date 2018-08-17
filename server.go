@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"time"
 
+	"git.blockloop.io/blockloop/icanhazpaste/rand"
 	"github.com/apex/log"
-	"github.com/blockloop/icanhazpaste/rand"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-redis/redis"
@@ -22,6 +22,17 @@ const (
 	Megabyte
 	Gigabyte
 	Terabyte
+
+	helpText = `
+ # send a file
+ curl --data-binary @./notes.txt https://icanhazpaste.com
+
+ # send some raw text
+ curl --data-binary 'Hello, there!' https://icanhazpaste.com
+
+ # send from stdin
+ journalctl -xe -u dnsmasq | curl --data-binary @- https://icanhazpaste.com
+`
 )
 
 var (
@@ -54,6 +65,7 @@ func (h *Handler) RegisterRoutes(mux chi.Router) {
 
 	mux.Get("/styles.css", h.getStyles)
 	mux.Get("/", h.getForm)
+	mux.Get("/help", h.getHelp)
 	mux.Get("/x/{name}", h.getPaste)
 }
 
@@ -63,6 +75,18 @@ func (h *Handler) getStyles(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getForm(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "form.html")
+}
+
+func (h *Handler) getHelp(w http.ResponseWriter, r *http.Request) {
+	switch render.GetAcceptedContentType(r) {
+	case render.ContentTypeHTML:
+		data := map[string]interface{}{"Text": helpText}
+		if err := HTMLHelpTemplate.Execute(w, data); err != nil {
+			sendError(w, 500, err)
+		}
+	default:
+		fmt.Fprintf(w, helpText)
+	}
 }
 
 func (h *Handler) getPaste(w http.ResponseWriter, r *http.Request) {
