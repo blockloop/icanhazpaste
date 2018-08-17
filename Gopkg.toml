@@ -26,9 +26,5 @@
   version = "3.3.2"
 
 [[constraint]]
-  name = "github.com/garyburd/redigo"
-  version = "1.4.0"
-
-[[constraint]]
   name = "github.com/alicebob/miniredis"
   version = "2.3.0"
