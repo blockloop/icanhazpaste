@@ -1,7 +1,7 @@
 FROM golang:1.9-alpine as builder
-RUN mkdir -p /go/src/git.blockloop.io/blockloop/icanhazpaste
-ADD . /go/src/git.blockloop.io/blockloop/icanhazpaste
-RUN go build -o /go/bin/icanhazpaste git.blockloop.io/blockloop/icanhazpaste
+RUN mkdir -p /go/src/github.com/blockloop/icanhazpaste
+ADD . /go/src/github.com/blockloop/icanhazpaste
+RUN go build -o /go/bin/icanhazpaste github.com/blockloop/icanhazpaste
 
 FROM alpine
 RUN apk add --update --no-cache ca-certificates

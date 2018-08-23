@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"git.blockloop.io/blockloop/icanhazpaste/rand"
+	"github.com/blockloop/icanhazpaste/rand"
 	"github.com/apex/log"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"

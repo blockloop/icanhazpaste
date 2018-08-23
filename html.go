@@ -28,7 +28,7 @@ var HTMLHelpTemplate = template.Must(template.New("help").Parse(`
    </pre>
   </div>
  <div>
- This software is open source at <a href="https://git.blockloop.io/blockloop/icanhazpaste">https://git.blockloop.io/blockloop/icanhazpaste</a>
+ This software is open source at <a href="https://github.com/blockloop/icanhazpaste">https://github.com/blockloop/icanhazpaste</a>
  </div>
 
 <script type="text/javascript"> var _paq = _paq || []; _paq.push(['trackPageView']); _paq.push(['enableLinkTracking']); (function() { var u="//scitylana.dokku.blockloop.io/"; _paq.push(['setTrackerUrl', u+'piwik.php']); _paq.push(['setSiteId', '1']); var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0]; g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s); })(); </script>
